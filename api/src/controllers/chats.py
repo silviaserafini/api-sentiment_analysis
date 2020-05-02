@@ -14,10 +14,6 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 
 
-
-
-
-
 client = MongoClient(DBURL)
 print(f"Connected to {DBURL}")
 db = client.get_database("dbChat")#["users"]
@@ -104,7 +100,7 @@ def addChatUser(chat_id):
         
         #update of the user permissions by adding the chat id
         post=db.users.find_one({'_id':ObjectId(user_id)})
-        if OjectId(chat_id) not in post['chats_list']:
+        if ObjectId(chat_id) not in post['chats_list']:
             post['chats_list'].append(ObjectId(chat_id))
         db.users.update_one({'_id':ObjectId(user_id)}, {"$set": post}, upsert=False)
     elif not chat_id:
@@ -192,14 +188,28 @@ def getSentiment(chat_id):
     sentiments={}
     for id, text in mess.items():
         sentiments[id]={'text':text,"score":sia.polarity_scores(text)} 
+    sums=0
+    for v in sentiments.values():
+        sums+=v['score']['compound']
+    avg=sums/len(sentiments)
+    sentiments['chat_sentiment']=avg
     return json.dumps(sentiments)
 
 
 
-'''- (GET) `/user/<user_id>/recommend`
-  - **Purpose:** Recommend friend to this user based on chat contents
-  - **Returns:** json array with top 3 similar users'''
+'''- (GET) `/chat/ids`
+- **Purpose:** Get all chat_id from the collection `chats`
+- **Returns:** json dict with all `chat_id` in the database'''
 
-'''@app.route("/user/<user_id>/recommend") 
+@app.route("/chat/ids") 
 @errorHandler
-def getSimilarUsers(user_id):  '''
+def getChatIds():
+    #try:
+    chat_ids={}
+    get=list(db.chats.find({},{'_id':1}))
+    for diz in get:      
+        for k,v in diz.items():
+            chat_ids[str(v)]=str(v)
+    #except:
+    #   raise APIError("chat id not found")
+    return json.dumps(chat_ids)
