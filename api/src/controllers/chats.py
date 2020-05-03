@@ -238,7 +238,7 @@ def getChatIds():
     #   raise APIError("chat id not found")
     return json.dumps(chat_ids)
 
-def getDate()
+def getDate():
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
     return dt_string
