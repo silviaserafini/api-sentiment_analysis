@@ -1,0 +1,1 @@
+{"options":{},"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_","ns":"geopro.geoprog"},{"v":{"$numberInt":"2"},"key":{"office":"2dsphere"},"name":"office_2dsphere","ns":"geopro.geoprog","2dsphereIndexVersion":{"$numberInt":"3"}}],"uuid":"fa6c95ae22f3476ebe2f9eab7a71e2e6"}

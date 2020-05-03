@@ -7,13 +7,17 @@ from flask import request
 from datetime import datetime
 from bson import ObjectId
 import requests
+import ast
 import re
 import json
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from classifier import *
+clf = SentimentClassifier()
 
 
 
+#DBURL='mongodb://192.168.1.73:27017/'
 client = MongoClient(DBURL)
 print(f"Connected to {DBURL}")
 db = client.get_database("dbChat")#["users"]
@@ -33,7 +37,7 @@ def insertUser(username):
         dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
         dic={'user_name':name,
         'insertion_date':dt_string,
-        'chats_list ': []
+        'chats_list': []
         }
         user_id=db.users.insert_one(dic)
     if not name:
@@ -51,6 +55,7 @@ def insertUser(username):
 @errorHandler
 def insertChat():
     arr = request.args.get("ids")
+    print(arr)
     try:
         name= request.args.get("name")
     except:
@@ -58,20 +63,26 @@ def insertChat():
     #creation of a new chat with the users included in arr
     if arr:
         now = datetime.now()
+        arr=ast.literal_eval(arr)
         dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
         dic={   
             'chat_name': name,
             'creation_date':dt_string,
-            'users_list':arr
+            'users_list':[],
+            'messages_list':[]
      
              }
 
         chat_id=db.chats.insert_one(dic)
+        #insert the users in the chat
+        chatId=chat_id.inserted_id
+        for user_id in arr:
+            r = requests.get(f'http://localhost:3500///chat/{chatId}/adduser?user_id={user_id}')
         
         #update of the users chats_list by adding the chat id
         for user_id in arr:
             post=db.users.find_one({'_id':ObjectId(user_id)})
-            post['chats_list'].append(chat_id)
+            post['chats_list'].append(ObjectId(chat_id.inserted_id))
             db.users.update_one({'_id':ObjectId(user_id)}, {"$set": post}, upsert=False)
 
     if not arr:
@@ -181,18 +192,34 @@ def getMessages(chat_id):
 '''
 nltk.download("vader_lexicon")
 sia = SentimentIntensityAnalyzer()
-@app.route("/chat/<chat_id>/sentiment") 
+@app.route("/chat/<chat_id>/sentiment") #?lang=<lang>
 @errorHandler
 def getSentiment(chat_id):  
     mess=requests.get(f'http://localhost:3500//chat/{chat_id}/list').json()
     sentiments={}
-    for id, text in mess.items():
-        sentiments[id]={'text':text,"score":sia.polarity_scores(text)} 
-    sums=0
-    for v in sentiments.values():
-        sums+=v['score']['compound']
-    avg=sums/len(sentiments)
-    sentiments['chat_sentiment']=avg
+    try:
+        lang= request.args.get("lang")
+    except:
+        raise APIError("You should specify the language of the chat in the query parameters [english='en',spanish='es'] ?lang=<lang>")
+
+    if lang=='en':
+
+        for id, text in mess.items():
+            sentiments[id]={'text':text,"score":sia.polarity_scores(text)} 
+        sums=0
+        for v in sentiments.values():
+            sums+=v['score']['compound']
+        avg=sums/len(sentiments)
+        sentiments['chat_sentiment']=avg
+    else:
+        for id, text in mess.items():
+            sentiments[id]={'text':text,"score":clf.predict(text)} 
+        sums=0
+        for v in sentiments.values():
+            sums+=v['score']*2-1#normalize the score(in senti the score_value domain is [0,1])
+        avg=sums/len(sentiments)
+        sentiments['chat_sentiment']=avg
+
     return json.dumps(sentiments)
 
 

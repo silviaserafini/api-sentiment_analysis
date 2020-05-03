@@ -13,6 +13,8 @@ from bson.json_util import dumps
 from bson import ObjectId
 import json
 
+
+#DBURL='mongodb://192.168.1.73:27017/'
 client = MongoClient(DBURL)
 print(f"Connected to {DBURL}")
 db = client.get_database("dbChat")

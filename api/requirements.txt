@@ -1,3 +1,13 @@
-flask
-pymongo
+Flask
+pymongo[tls,srv]
 python-dotenv
+pandas
+numpy
+nltk
+scikit-learn
+jsonschema
+datetime 
+regex
+decorator
+requests
+sklearn
