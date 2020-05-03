@@ -11,3 +11,6 @@ regex
 decorator
 requests
 sklearn
+slacker
+spanish-sentiment-analysis
+ipython
