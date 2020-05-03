@@ -1,4 +1,5 @@
 from src.app import app
+from flask import render_template
 from pymongo import MongoClient
 from src.helpers.errorHandler import errorHandler ,Error404 ,APIError
 from src.config import DBURL
@@ -22,6 +23,10 @@ client = MongoClient(DBURL)
 print(f"Connected to {DBURL}")
 db = client.get_database("dbChat")#["users"]
 
+@app.route("/")
+def help():
+     return render_template('readme.html')
+
 
 '''- (GET) `/user/create/<username>`
   - **Purpose:** Create a user and save into DB
@@ -31,16 +36,14 @@ db = client.get_database("dbChat")#["users"]
 @app.route("/user/create/<username>")
 @errorHandler
 def insertUser(username):
-    name = username
-    if name:
-        now = datetime.now()
-        dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-        dic={'user_name':name,
-        'insertion_date':dt_string,
-        'chats_list': []
+    if username:
+        dic={
+            'user_name':username,
+            'insertion_date':getDate(),
+            'chats_list': []
         }
         user_id=db.users.insert_one(dic)
-    if not name:
+    else:
         print("ERROR")
         raise Error404("name not found")
     return json.dumps({'user_id':str(user_id.inserted_id)})
@@ -56,23 +59,17 @@ def insertUser(username):
 def insertChat():
     arr = request.args.get("ids")
     print(arr)
-    try:
-        name= request.args.get("name")
-    except:
-        name=''
+    name= request.args.get("name",default='')
+    
     #creation of a new chat with the users included in arr
     if arr:
-        now = datetime.now()
         arr=ast.literal_eval(arr)
-        dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
         dic={   
             'chat_name': name,
-            'creation_date':dt_string,
+            'creation_date':getDate(),
             'users_list':[],
             'messages_list':[]
-     
-             }
-
+        }
         chat_id=db.chats.insert_one(dic)
         #insert the users in the chat
         chatId=chat_id.inserted_id
@@ -85,7 +82,7 @@ def insertChat():
             post['chats_list'].append(ObjectId(chat_id.inserted_id))
             db.users.update_one({'_id':ObjectId(user_id)}, {"$set": post}, upsert=False)
 
-    if not arr:
+    else:
         print("ERROR")
         raise APIError("Tienes que mandar un query parameter ?ids=<arr>&name=<chatname>")
     
@@ -148,13 +145,13 @@ def addMessage(chat_id):
         raise PermissionError("Permission denied")
 
     #add the message to the messages collection and get the id
-    now = datetime.now()
-    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-    dic={'user_id': ObjectId(user_id),
+    
+    dic={
+         'user_id': ObjectId(user_id),
          'text':text,
-         'time':dt_string,
+         'time':getDate(),
          'chat_id':ObjectId(chat_id)
-        }
+    }
     message_id=db.messages.insert_one(dic)
     
     #add the message text to the messages_list of the chat
@@ -240,3 +237,8 @@ def getChatIds():
     #except:
     #   raise APIError("chat id not found")
     return json.dumps(chat_ids)
+
+def getDate()
+    now = datetime.now()
+    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+    return dt_string
