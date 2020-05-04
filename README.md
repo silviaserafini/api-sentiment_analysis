@@ -31,16 +31,19 @@ Heroku link: https://api-recommender.herokuapp.com/
 - (POST) `/chat/<chat_id>/addmessage`
   - **Purpose:** Add a message to the conversation. Before adding the chat message to the database, check that the incoming user                    is part of this chat id. If not, raise an exception.
   - **Params:**
-    - `chat_id`: Chat to store message
-    - `user_id`: the user that writes the message
-    - `text`: Message text
+   - `chat_id`: Chat to store message
+   - `user_id`: the user that writes the message
+   - `text`: Message text
   - **Returns:** `message_id`
 - (GET) `/chat/<chat_id>/list`
   - **Purpose:** Get all messages from `chat_id`
   - **Returns:** json array with all messages from this `chat_id`
-- (GET) `/chat/<chat_id>/sentiment` #?lang=<lang>
+- (GET) `/chat/<chat_id>/sentiment` 
   - **Purpose:** Analyze messages from `chat_id`. Use `NLTK` sentiment analysis package for this task
-  - **Returns:** json with all sentiments from messages in the chat
+  - **Params:** 
+   - `chat_id`: Chat with the messages to analyze
+   - `lang`: language of the chat (en=English, 'es'=Spanish)
+  - **Returns:** json with all sentiments from messages in the chat and the avarage sentiment of the chat (last key= 'chat_sentiment'). 
 - (GET) `/chat/ids`
   - **Purpose:** Get all chat_id from the collection `chats`
   - **Returns:** json dict with all `chat_id` in the database'
