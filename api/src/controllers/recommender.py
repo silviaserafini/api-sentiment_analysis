@@ -11,6 +11,7 @@ from src.helpers.errorHandler import errorHandler ,Error404 ,APIError
 from src.config import DBURL
 from bson.json_util import dumps
 from bson import ObjectId
+from src.controllers.chats import *
 import json
 
 
@@ -30,14 +31,16 @@ sia = SentimentIntensityAnalyzer()
 @errorHandler
 def getSimilarUsers(user_id):
     #get all the chats ids
-    r = requests.get(f'http://localhost:3500//chat/ids')
-    chat_ids=list(r.json().keys())
+    #r = requests.get(f'http://localhost:3500//chat/ids')
+    r=ast.literal_eval(getChatIds())
+    chat_ids=list(r.keys())
     
     #get all the messages texts for all the chats
     messages1={}#
     for chat_id in chat_ids:
-        r = requests.get(f'http://localhost:3500//chat/{str(chat_id)}/list')
-        messages1.update(r.json())
+        #r = requests.get(f'http://localhost:3500//chat/{str(chat_id)}/list')
+        r=ast.literal_eval(getMessages(chat_id))
+        messages1.update(r)
         
     #concat all the the messages of an user in a unique string
     users_messages={}

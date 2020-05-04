@@ -18,6 +18,7 @@ clf = SentimentClassifier()
 
 
 
+
 #DBURL='mongodb://192.168.1.73:27017/'
 client = MongoClient(DBURL)
 print(f"Connected to {DBURL}")
@@ -53,7 +54,8 @@ def insertUser(username):
 '''- (GET) `/chat/create`
   - **Purpose:** Create a conversation to load messages
   - **Params:** An array of users ids `[user_id]`
-  - **Returns:** `chat_id`'''   
+  - **Returns:** `chat_id`''' 
+  
 @app.route("/chat/create") #?ids=<arr>&name=<chatname>
 @errorHandler
 def insertChat():
@@ -74,8 +76,8 @@ def insertChat():
         #insert the users in the chat
         chatId=chat_id.inserted_id
         for user_id in arr:
-            r = requests.get(f'http://localhost:3500///chat/{chatId}/adduser?user_id={user_id}')
-        
+            #r = requests.get(f'http://localhost:3500/chat/{chatId}/adduser?user_id={user_id}')
+            r=addChatUser(chatId, user_id)
         #update of the users chats_list by adding the chat id
         for user_id in arr:
             post=db.users.find_one({'_id':ObjectId(user_id)})
@@ -97,8 +99,9 @@ def insertChat():
 
 @app.route("/chat/<chat_id>/adduser") #?user_id=<user_id>
 @errorHandler
-def addChatUser(chat_id):
-    user_id= request.args.get("user_id")
+def addChatUser(chat_id, user_id=None):
+    if user_id==None:
+        user_id= request.args.get("user_id")
     if user_id!=None and chat_id!=None:
         #update of the chat document by adding the user id
         post=db.chats.find_one({'_id':ObjectId(chat_id)})
@@ -192,7 +195,8 @@ sia = SentimentIntensityAnalyzer()
 @app.route("/chat/<chat_id>/sentiment") #?lang=<lang>
 @errorHandler
 def getSentiment(chat_id):  
-    mess=requests.get(f'http://localhost:3500//chat/{chat_id}/list').json()
+    #mess=requests.get(f'http://localhost:3500/chat/{chat_id}/list').json()
+    mess=ast.literal_eval(getMessages(chat_id))
     sentiments={}
     try:
         lang= request.args.get("lang")
